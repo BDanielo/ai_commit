@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# AI Commit Message
+ai_commit() {
+  model=${1:-deepseek-coder:6.7b-instruct}
+
+  diff=$(git diff --cached)
+
+  # Check if diff is empty
+  if [ -z "$diff" ]; then
+    echo "Error: No git diff found"
+    exit 1
+  fi
+
+  # Get all commit comments
+  commit_comments=$(git log --pretty=format:"%s")
+
+  package_content=''
+  # Check if package.json exists in the current directory
+  if [ -f "package.json" ]; then
+    package_content="Package.json: $(cat package.json)."
+  fi
+
+  prompt="$package_content List of pushed commits : \`\`\`$commit_comments\`\`\`. You are an expert in web development and in git. I made some modifications, here is the current diff: \`\`\`$diff\`\`\`.  Create a new git commit message from the diff provided above. You could also refer to the list of pushed commits for example to help you create the commit message. Becareful this is very important I only want you to give me the commit message, nothing more you dont need to explain yourself or describe what you did. The commit message should be written in active voice and should follow conventional commit style, it should clear simple and short, and the format should be <type>[scope]: <description>. Example: fix(authentication): add password regex pattern."
+
+  ollama run $model "$prompt"
+}
+
+ai_commit $1
